@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>A New Chapter - Birthday Card</title>
     
     <!-- React & ReactDOM -->
@@ -22,21 +22,77 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* Custom 3D Book Styles */
-        .perspective-1000 {
-            perspective: 1500px;
+        :root {
+            --book-height: 480px;
+            --book-width: 320px;
         }
 
+        @media (min-width: 768px) {
+            :root {
+                --book-height: 580px;
+                --book-width: 400px;
+            }
+        }
+
+        body {
+            background-color: #0c0a09;
+            touch-action: manipulation;
+        }
+
+        /* Perspective Container */
+        .perspective-container {
+            perspective: 2000px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* The Core Book Wrapper */
         .book-wrapper {
+            position: relative;
+            width: var(--book-width);
+            height: var(--book-height);
             transform-style: preserve-3d;
-            transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1);
-            transform-origin: left center; /* Critical for centering the spine */
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center left;
         }
 
+        /* Floating Animation Logic */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .animate-float {
+            animation: float 5s ease-in-out infinite;
+        }
+
+        /* Open State Logic */
+        .book-open.book-wrapper {
+            /* On mobile, we scale down and move right to show both pages */
+            transform: translateX(35%) scale(0.7) translateY(0) !important;
+            animation: none !important; /* Kill float immediately on open */
+        }
+
+        @media (min-width: 768px) {
+            .book-open.book-wrapper {
+                transform: translateX(50%) scale(1) translateY(0) !important;
+            }
+        }
+
+        /* The Flipping Cover */
         .book-cover-flip {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             transform-style: preserve-3d;
             transform-origin: left center;
-            transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1);
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 10;
         }
 
@@ -44,17 +100,7 @@
             transform: rotateY(-180deg);
         }
 
-        .book-open .book-wrapper {
-            transform: translateX(0%); /* Center the open book spine */
-        }
-        
-        @media (max-width: 768px) {
-             .book-open .book-wrapper {
-                /* On mobile, center spine (50%) and scale down to fit width */
-                transform: translateX(50%) scale(0.55); 
-            }
-        }
-
+        /* Faces */
         .face {
             backface-visibility: hidden;
             position: absolute;
@@ -62,6 +108,7 @@
             left: 0;
             width: 100%;
             height: 100%;
+            border-radius: 4px 8px 8px 4px;
         }
 
         .front-face {
@@ -72,8 +119,8 @@
         .back-face {
             transform: rotateY(180deg);
             z-index: 1;
-            background-color: #fdfbf7; /* Cream paper */
-            box-shadow: inset -5px 0 10px rgba(0,0,0,0.1); /* Inner spine shadow */
+            background-color: #fdfbf7;
+            box-shadow: inset -15px 0 30px rgba(0,0,0,0.15);
         }
 
         .static-right-page {
@@ -84,98 +131,72 @@
             height: 100%;
             z-index: 0;
             background-color: #fdfbf7;
-            box-shadow: inset 5px 0 10px rgba(0,0,0,0.1); /* Inner spine shadow */
+            border-radius: 0 8px 8px 0;
+            box-shadow: inset 15px 0 30px rgba(0,0,0,0.15), 5px 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* Leather Texture Effect */
+        /* Textures */
         .leather-texture {
-            background-color: #5D2E2E; /* Deep Red/Brown */
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+            background-color: #5D2E2E; 
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
+            box-shadow: 10px 10px 40px rgba(0,0,0,0.6);
         }
 
-        /* Gold Foil Effect */
         .gold-text {
             color: #D4AF37;
-            background: linear-gradient(45deg, #C5A059 0%, #E6C87C 50%, #C5A059 100%);
+            background: linear-gradient(45deg, #C5A059 0%, #F8E4B1 50%, #C5A059 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        }
-        
-        .gold-border {
-            border-color: #D4AF37;
-            box-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
         }
 
-        /* Paper Texture */
         .paper-texture {
             background-color: #fdfbf7;
             background-image: radial-gradient(#e3e1dd 1px, transparent 1px);
             background-size: 20px 20px;
         }
 
-        /* Floating Animation */
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
-        .animate-float {
-            animation: float 4s ease-in-out infinite;
-        }
-        
-        /* Sparkle Animation */
         @keyframes sparkle {
             0%, 100% { opacity: 0; transform: scale(0); }
-            50% { opacity: 1; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
         }
         .sparkle {
-            animation: sparkle 2s infinite;
+            animation: sparkle 2.5s infinite;
         }
 
-        /* Handwriting Font */
-        .font-handwriting {
-            font-family: 'Great Vibes', cursive;
-        }
-        .font-body {
-            font-family: 'Cormorant Garamond', serif;
-        }
-        .font-title {
-            font-family: 'Cinzel', serif;
-        }
+        .font-handwriting { font-family: 'Great Vibes', cursive; }
+        .font-body { font-family: 'Cormorant Garamond', serif; }
+        .font-title { font-family: 'Cinzel', serif; }
 
-        /* Hardcover thickness simulation */
         .thickness {
             position: absolute;
             left: 0;
-            bottom: -3px; /* Slightly below */
+            bottom: -5px;
             width: 100%;
-            height: 6px;
-            background: #3e1e1e;
+            height: 10px;
+            background: #2b1515;
             transform: rotateX(90deg);
             transform-origin: bottom;
         }
     </style>
 </head>
-<body class="bg-stone-900 text-stone-800 h-screen overflow-hidden m-0 p-0 flex items-center justify-center">
+<body class="text-stone-800 h-screen overflow-hidden m-0 p-0">
 
-    <div id="root" class="w-full h-full flex items-center justify-center"></div>
+    <div id="root" class="w-full h-full"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
         const Sparkles = () => {
             const [sparkles, setSparkles] = useState([]);
-
             useEffect(() => {
-                const count = 30;
+                const count = 20;
                 const newSparkles = Array.from({ length: count }).map((_, i) => ({
                     id: i,
                     left: Math.random() * 100 + '%',
                     top: Math.random() * 100 + '%',
-                    delay: Math.random() * 2 + 's',
-                    size: Math.random() * 10 + 5 + 'px',
-                    color: Math.random() > 0.5 ? '#FFD700' : '#FFF'
+                    delay: Math.random() * 3 + 's',
+                    size: Math.random() * 8 + 4 + 'px',
+                    color: Math.random() > 0.4 ? '#D4AF37' : '#FFFFFF'
                 }));
                 setSparkles(newSparkles);
             }, []);
@@ -205,120 +226,92 @@
         const BookCard = () => {
             const [isOpen, setIsOpen] = useState(false);
 
-            const toggleBook = () => {
-                setIsOpen(!isOpen);
-            };
-
             return (
-                <div className="relative w-full h-full flex flex-col items-center justify-center bg-[url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center">
-                    {/* Dark overlay for background readability */}
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+                <div className="relative w-full h-full flex flex-col items-center justify-center bg-stone-950 select-none">
+                    {/* Background */}
+                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-20"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80"></div>
 
-                    {/* Hint Text */}
-                    <div className={`absolute top-10 text-stone-300 font-title transition-opacity duration-500 z-50 ${isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100 animate-pulse'}`}>
-                        <p className="tracking-widest text-sm md:text-lg uppercase">Click the book to open</p>
+                    {/* Mobile-friendly Instructions */}
+                    <div className={`absolute top-10 md:top-12 text-stone-400 font-title transition-opacity duration-700 z-50 text-center px-6 ${isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100 animate-pulse'}`}>
+                        <p className="tracking-[0.3em] text-[10px] md:text-sm uppercase mb-1">A gift for the seeker of stories</p>
+                        <p className="text-stone-500 italic text-[10px]">Tap cover to open</p>
                     </div>
 
-                    {/* The Scene Container */}
-                    <div className="perspective-1000 w-[90vw] max-w-[400px] h-[550px] md:h-[600px] md:max-w-[450px] relative flex items-center justify-center z-30">
-                        
-                        <div className={`book-wrapper w-full h-full relative cursor-pointer ${isOpen ? 'book-open' : 'animate-float'}`} onClick={toggleBook}>
+                    <div className="perspective-container">
+                        <div 
+                            className={`book-wrapper cursor-pointer ${isOpen ? 'book-open' : 'animate-float'}`} 
+                            onClick={() => setIsOpen(!isOpen)}
+                        >
                             
-                            {/* --- Right Page (Static Base) --- */}
-                            <div className="static-right-page rounded-r-lg border-r-4 border-b-4 border-stone-200 flex flex-col p-8 md:p-10 justify-center">
-                                {/* Decorative Corner Elements */}
-                                <div className="absolute top-4 right-4 text-amber-700/30 text-2xl"><i className="fas fa-feather-alt"></i></div>
-                                <div className="absolute bottom-4 right-4 text-stone-400 text-xs font-title">Page 1 of 365</div>
-
-                                <div className="w-full h-full border-2 border-stone-200 p-6 relative">
-                                    <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/notebook.png')]"></div>
+                            {/* --- Right Page (Inside) --- */}
+                            <div className="static-right-page flex flex-col p-6 md:p-12 justify-center border-l border-stone-300">
+                                <div className="absolute top-4 right-6 text-amber-900/20 text-2xl"><i className="fas fa-feather"></i></div>
+                                
+                                <div className="w-full h-full border border-stone-200/60 p-4 md:p-8 relative flex flex-col justify-center shadow-inner rounded-sm bg-white/20">
+                                    <div className="absolute top-0 left-0 w-full h-full opacity-5 bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"></div>
                                     
-                                    <h3 className="text-2xl md:text-3xl font-handwriting text-amber-900 mb-6 text-center">Dearest Reader,</h3>
+                                    <h3 className="text-xl md:text-3xl font-handwriting text-amber-950 mb-4 md:mb-8 text-center">To the Protagonist,</h3>
                                     
-                                    <p className="font-body text-lg md:text-xl leading-relaxed text-stone-800 mb-4 indent-8">
-                                        Another chapter begins today. May your story be filled with unexpected plot twists of joy, characters who bring out your best, and settings that take your breath away.
+                                    <p className="font-body text-base md:text-xl leading-relaxed text-stone-900 mb-4 indent-4 md:indent-6">
+                                        Every year unfolds as a fresh volume, and today you step onto Page One of a brand-new adventure. 
                                     </p>
                                     
-                                    <p className="font-body text-lg md:text-xl leading-relaxed text-stone-800 indent-8">
-                                        Wishing you a bestseller of a year.
+                                    <p className="font-body text-base md:text-xl leading-relaxed text-stone-900 indent-4 md:indent-6 mb-6 md:mb-10">
+                                        May your story be filled with happiness and joyful twists.
                                     </p>
 
-                                    <div className="mt-8 md:mt-12 text-center">
-                                        <div className="inline-block border-t border-b border-amber-900/30 py-2 px-4">
-                                            <p className="font-title font-bold text-amber-900 tracking-widest uppercase text-sm">Happy Birthday</p>
+                                    <div className="text-center mt-auto">
+                                        <div className="inline-block border-t border-b border-amber-900/40 py-2 md:py-3 px-4 md:px-6">
+                                            <p className="font-title font-bold text-amber-950 tracking-[0.2em] uppercase text-[10px] md:text-sm">Happy Birthday Marie</p>
                                         </div>
                                     </div>
-                                    
-                                    {/* Interactive signature or icon */}
-                                    <div className="mt-8 text-center text-amber-800/60">
-                                        <i className="fas fa-book-open text-2xl"></i>
-                                    </div>
+                                </div>
+                                <div className="absolute bottom-4 left-0 right-0 text-center text-stone-400 text-[8px] md:text-[10px] font-title tracking-wide px-4">
+                                    Gift voucher for any book, redeemable at any store.
                                 </div>
                             </div>
 
-                            {/* --- Flipping Cover (Front & Back of Front) --- */}
-                            <div className="book-cover-flip absolute top-0 left-0 w-full h-full rounded-r-lg rounded-l-sm shadow-2xl">
+                            {/* --- Flipping Section --- */}
+                            <div className="book-cover-flip">
                                 
-                                {/* FRONT FACE (Outer Cover) */}
-                                <div className="face front-face leather-texture rounded-r-lg rounded-l-sm border-l-8 border-stone-900 flex flex-col items-center justify-center p-8 relative overflow-hidden">
-                                    {/* Hardcover thickness effect */}
+                                {/* FRONT COVER */}
+                                <div className="face front-face leather-texture border-l-4 md:border-l-8 border-stone-950 flex flex-col items-center justify-center p-6 md:p-8 relative overflow-hidden">
                                     <div className="thickness"></div>
+                                    <div className="absolute inset-4 md:inset-6 border-2 border-yellow-600/30 rounded-sm"></div>
 
-                                    {/* Decorative Frame */}
-                                    <div className="absolute inset-4 border-2 border-yellow-600/50 rounded-r-md rounded-l-none"></div>
-                                    <div className="absolute inset-6 border border-yellow-600/30 rounded-r-md rounded-l-none"></div>
-
-                                    {/* Corner Flourishes */}
-                                    <div className="absolute top-8 left-8 text-yellow-600/60"><i className="fas fa-certificate"></i></div>
-                                    <div className="absolute bottom-8 right-8 text-yellow-600/60"><i className="fas fa-certificate"></i></div>
-
-                                    {/* Title Section */}
-                                    <div className="z-10 text-center space-y-2">
-                                        <div className="text-yellow-600/80 text-xs font-title tracking-[0.3em] uppercase mb-4">The Chronicles of</div>
+                                    <div className="z-10 text-center flex flex-col items-center">
+                                        <span className="text-yellow-600/60 text-[8px] md:text-[10px] font-title tracking-[0.4em] uppercase mb-4 md:mb-6">Original Manuscript</span>
+                                        <h1 className="text-2xl md:text-5xl font-title font-bold gold-text tracking-wider leading-none">THE<br/>STORY</h1>
+                                        <span className="text-yellow-600/70 text-xs md:text-sm font-body italic my-1 md:my-2">of</span>
+                                        <h2 className="text-3xl md:text-6xl font-title font-bold gold-text tracking-widest uppercase">Marie</h2>
                                         
-                                        <h1 className="text-4xl md:text-6xl font-title font-bold gold-text tracking-wide mb-2">YOU</h1>
-                                        
-                                        <div className="w-16 h-1 bg-yellow-600/50 mx-auto my-4 rounded-full"></div>
-                                        
-                                        <div className="font-body italic text-yellow-100/70 text-xl">A Birthday Anthology</div>
+                                        <div className="w-8 md:w-12 h-0.5 bg-yellow-600/40 my-4 md:my-8 rounded-full"></div>
+                                        <div className="font-body italic text-yellow-50/60 text-base md:text-xl px-2">A Birthday Anthology</div>
                                     </div>
 
-                                    {/* Center Graphic */}
-                                    <div className="my-8 text-6xl md:text-8xl text-yellow-600/80 drop-shadow-lg">
+                                    <div className="mt-4 md:mt-8 text-5xl md:text-7xl text-yellow-600/60 opacity-80">
                                         <i className="fas fa-book-journal-whills"></i>
                                     </div>
 
-                                    {/* Bottom Text */}
-                                    <div className="absolute bottom-12 w-full text-center">
-                                        <p className="font-title text-xs text-yellow-600/60 tracking-widest uppercase">Limited Edition</p>
+                                    <div className="absolute bottom-6 md:bottom-10 w-full text-center">
+                                        <p className="font-title text-[8px] md:text-[10px] text-yellow-600/60 tracking-[0.5em] uppercase">Limited Edition</p>
                                     </div>
-
-                                    {/* Spine Highlight */}
-                                    <div className="absolute left-0 top-0 w-4 h-full bg-gradient-to-r from-white/10 to-transparent pointer-events-none"></div>
+                                    <div className="absolute left-0 top-0 w-4 h-full bg-gradient-to-r from-white/10 to-transparent"></div>
                                 </div>
 
-                                {/* BACK FACE (Inside Left) */}
-                                <div className="face back-face rounded-l-lg border-r border-stone-300 p-8 flex flex-col justify-between relative">
-                                    
-                                    <div className="absolute top-0 left-0 w-full h-full paper-texture opacity-50 pointer-events-none"></div>
-
-                                    {/* Ex Libris / Bookplate */}
-                                    <div className="border-4 border-double border-stone-800/20 p-6 m-2 h-full flex flex-col items-center relative bg-white/40 shadow-inner">
-                                        
-                                        <div className="w-full text-center border-b border-stone-800/20 pb-4 mb-6">
-                                            <h2 className="font-title text-2xl text-stone-800">Chapter One</h2>
-                                            <p className="font-body italic text-stone-500">The Adventure Continues</p>
+                                {/* INSIDE COVER (LEFT) */}
+                                <div className="face back-face border-r border-stone-300 p-6 md:p-12 flex flex-col items-center justify-center">
+                                    <div className="absolute inset-0 paper-texture opacity-30"></div>
+                                    <div className="border border-stone-300/60 p-4 md:p-8 h-full w-full flex flex-col items-center justify-center text-center relative bg-stone-50/10 shadow-inner">
+                                        <div className="mb-4 md:mb-8 opacity-20">
+                                            <i className="fas fa-scroll text-2xl md:text-4xl text-stone-800"></i>
                                         </div>
-
-                                        <div className="flex-grow flex items-center justify-center">
-                                            <p className="font-handwriting text-2xl md:text-3xl text-center text-stone-700 leading-relaxed px-2">
-                                                "And so, with another year gathered in their heart, they turned the page to discover what magic lay ahead..."
-                                            </p>
-                                        </div>
-
-                                        <div className="w-full flex justify-center mt-6 text-stone-400">
-                                            <i className="fas fa-bookmark text-3xl"></i>
-                                        </div>
+                                        <p className="font-handwriting text-xl md:text-4xl text-stone-800 leading-snug">
+                                            "The world is a book, and those who do not travel another year only read a page."
+                                        </p>
+                                        <div className="mt-4 md:mt-8 w-8 h-px bg-stone-300"></div>
+                                        <div className="absolute bottom-4 text-stone-400 text-[8px] font-title tracking-widest uppercase">Vol. MMXXVI</div>
                                     </div>
                                 </div>
                             </div>
@@ -326,21 +319,18 @@
                         </div>
                     </div>
                     
-                    {/* Controls / Footer */}
                     {isOpen && (
-                         <div className="absolute bottom-8 z-50 animate-fade-in transition-opacity duration-1000">
+                         <div className="absolute bottom-8 md:bottom-12 z-50 flex flex-col items-center gap-4">
                             <button 
-                                onClick={(e) => { e.stopPropagation(); toggleBook(); }}
-                                className="px-6 py-2 bg-stone-800/80 text-stone-300 font-title text-sm rounded-full hover:bg-stone-700 hover:text-white transition-colors border border-stone-600 backdrop-blur-sm cursor-pointer"
+                                onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
+                                className="px-8 py-3 bg-white/5 text-stone-300 font-title text-[9px] tracking-[0.2em] uppercase rounded-full hover:bg-white/10 hover:text-white transition-all border border-white/20 backdrop-blur-md active:scale-95"
                             >
-                                Close Book
+                                Close Manuscript
                             </button>
                         </div>
                     )}
-                    
-                    {/* Magic Sparkles Global Component */}
-                    {isOpen && <Sparkles />}
 
+                    {isOpen && <Sparkles />}
                 </div>
             );
         };
