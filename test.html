@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Marie - Birthday Card</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Custom 3D Book Styles */
+        .perspective-container {
+            perspective: 2500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .book-wrapper {
+            transform-style: preserve-3d;
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center left; 
+            position: relative;
+            width: 320px;
+            height: 460px;
+        }
+
+        /* Scaled for Tablets and larger screens */
+        @media (min-width: 640px) {
+            .book-wrapper {
+                width: 380px;
+                height: 540px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .book-wrapper {
+                width: 420px;
+                height: 600px;
+            }
+        }
+
+        .book-cover-flip {
+            transform-style: preserve-3d;
+            transform-origin: left center;
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Open State Logic */
+        .book-open.book-wrapper {
+            /* Shift the whole book right so the spine remains central */
+            transform: translateX(50%) !important; 
+        }
+
+        /* Tablet/Mobile Scaling to keep book in viewport when open */
+        @media (max-width: 480px) {
+             .book-open.book-wrapper {
+                transform: translateX(45%) scale(0.55) !important; 
+            }
+        }
+
+        @media (min-width: 481px) and (max-width: 1023px) {
+             .book-open.book-wrapper {
+                transform: translateX(45%) scale(0.75) !important; 
+            }
+        }
+
+        .book-open .book-cover-flip {
+            transform: rotateY(-180deg);
+        }
+
+        .face {
+            backface-visibility: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 4px 8px 8px 4px;
+        }
+
+        .front-face {
+            z-index: 2;
+            transform: rotateY(0deg);
+        }
+
+        .back-face {
+            transform: rotateY(180deg);
+            z-index: 1;
+            background-color: #fdfbf7;
+            box-shadow: inset -15px 0 30px rgba(0,0,0,0.15);
+        }
+
+        .static-right-page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background-color: #fdfbf7;
+            border-radius: 0 8px 8px 0;
+            box-shadow: inset 15px 0 30px rgba(0,0,0,0.15), 5px 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .leather-texture {
+            background-color: #5D2E2E; 
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.12'/%3E%3C/svg%3E");
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.4);
+        }
+
+        .gold-text {
+            color: #D4AF37;
+            background: linear-gradient(45deg, #C5A059 0%, #F8E4B1 50%, #C5A059 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
+        }
+
+        .paper-texture {
+            background-color: #fdfbf7;
+            background-image: radial-gradient(#e3e1dd 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 5s ease-in-out infinite;
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        .sparkle {
+            animation: sparkle 2.5s infinite;
+        }
+
+        .font-handwriting { font-family: 'Great Vibes', cursive; }
+        .font-body { font-family: 'Cormorant Garamond', serif; }
+        .font-title { font-family: 'Cinzel', serif; }
+
+        .thickness {
+            position: absolute;
+            left: 0;
+            bottom: -5px;
+            width: 100%;
+            height: 10px;
+            background: #2b1515;
+            transform: rotateX(90deg);
+            transform-origin: bottom;
+        }
+    </style>
+</head>
+<body class="bg-stone-900 text-stone-800 h-screen overflow-hidden m-0 p-0 flex items-center justify-center">
+
+    <div id="root" class="w-full h-full flex items-center justify-center"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const Sparkles = () => {
+            const [sparkles, setSparkles] = useState([]);
+            useEffect(() => {
+                const count = 38;
+                const newSparkles = Array.from({ length: count }).map((_, i) => ({
+                    id: i,
+                    left: Math.random() * 100 + '%',
+                    top: Math.random() * 100 + '%',
+                    delay: Math.random() * 2 + 's',
+                    size: Math.random() * 10 + 5 + 'px',
+                    color: Math.random() > 0.5 ? '#DC143C' : '#D4AF37'
+                }));
+                setSparkles(newSparkles);
+            }, []);
+
+            return (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
+                    {sparkles.map((s) => (
+                        <div 
+                            key={s.id}
+                            className="absolute sparkle"
+                            style={{
+                                left: s.left,
+                                top: s.top,
+                                animationDelay: s.delay,
+                                width: s.size,
+                                height: s.size,
+                                color: s.color
+                            }}
+                        >
+                            <i className="fa-solid fa-heart" style={{ color: s.color, fontSize: '100%' }}></i>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        const BookCard = () => {
+            const [isOpen, setIsOpen] = useState(false);
+
+            return (
+                <div className="relative w-full h-full flex flex-col items-center justify-center bg-stone-950 overflow-hidden">
+                    {/* Background */}
+                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-30"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/80"></div>
+
+                    {/* Hint Text */}
+                    <div className={`absolute top-12 text-stone-400 font-title transition-opacity duration-700 z-50 text-center px-4 ${isOpen ? 'opacity-0' : 'opacity-100 animate-pulse'}`}>
+                        <p className="tracking-[0.4em] text-[10px] md:text-sm uppercase mb-2">A gift for the seeker of stories</p>
+                        <p className="text-stone-500 italic text-xs">Tap to begin</p>
+                    </div>
+
+                    {/* Perspective Wrapper */}
+                    <div className="perspective-container z-30">
+                        <div 
+                            className={`book-wrapper cursor-pointer ${isOpen ? 'book-open' : 'animate-float'}`} 
+                            onClick={() => setIsOpen(!isOpen)}
+                        >
+                            
+                            {/* --- Right Page --- */}
+                            <div className="static-right-page flex flex-col p-4 md:p-12 justify-center border-l border-stone-300">
+                                <div className="absolute top-4 right-4 md:top-8 md:right-8 text-amber-900/20 text-2xl md:text-3xl"><i className="fas fa-feather"></i></div>
+                                
+                                <div className="w-full h-full border border-stone-200/60 p-4 md:p-8 relative flex flex-col justify-center shadow-inner rounded-sm bg-white/20">
+                                    <div className="absolute top-0 left-0 w-full h-full opacity-5 bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"></div>
+                                    
+                                    <h3 className="text-xl md:text-3xl font-handwriting text-amber-950 mb-3 md:mb-4 text-center">To the Protagonist,</h3>
+                                    
+                                    <p className="font-body text-base md:text-xl leading-relaxed text-stone-900 indent-4 md:indent-6 mb-4 md:mb-10">
+                                        Every year unfolds as a fresh volume, and today you step onto Page One of a brand-new adventure. 
+                                    </p>
+                                    
+                                    <p className="font-body text-base md:text-xl leading-relaxed text-stone-900 indent-4 md:indent-6 mb-4 md:mb-10">
+                                        May your story be filled with happiness, surprise you with joyful twists, and come alive through dialogue that sparkles with laughter.
+                                    </p>
+
+                                    <div className="text-center mt-auto">
+                                        <div className="inline-block border-t border-b border-amber-900/40 py-3 md:py-3 px-3 md:px-6">
+                                            <p className="font-title font-bold text-amber-950 tracking-[0.2em] uppercase text-[10px] md:text-sm">Happy Birthday Beautiful</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-2 text-center text-stone-400 text-[8px] md:text-[10px] font-title tracking-wide"> Gift voucher for any book, redeemable at any store.</div>
+                            </div>
+
+                            {/* --- Flipping Section --- */}
+                            <div className="book-cover-flip">
+                                
+                                {/* FRONT COVER */}
+                                <div className="face front-face leather-texture border-l-8 border-stone-950 flex flex-col items-center justify-center p-6 md:p-8 relative overflow-hidden">
+                                    <div className="thickness"></div>
+                                    
+                                    <div className="absolute inset-4 md:inset-6 border-2 border-yellow-600/30 rounded-sm"></div>
+                                    <div className="absolute inset-6 md:inset-8 border border-yellow-600/20 rounded-sm"></div>
+
+                                    <div className="z-10 text-center flex flex-col items-center">
+                                        <span className="text-yellow-600/60 text-[8px] md:text-[10px] font-title tracking-[0.4em] uppercase mb-4 md:mb-6">Original Manuscript</span>
+                                        <h1 className="text-lg md:text-3xl font-title font-bold gold-text tracking-wider leading-none">THE<br/>CHRONICLES</h1>
+                                        <span className="text-yellow-600/70 text-xs md:text-sm font-body italic my-1 md:my-2">of</span>
+                                        <h2 className="text-4xl md:text-6xl font-title font-bold gold-text tracking-widest">MARIE</h2>
+                                        
+                                        <div className="w-8 md:w-12 h-0.5 bg-yellow-600/40 my-6 md:my-8 rounded-full"></div>
+                                        
+                                        <div className="font-body italic text-yellow-50/60 text-base md:text-xl">A Birthday Anthology</div>
+                                    </div>
+
+                                    <div className="mt-4 md:mt-5 text-5xl md:text-7xl text-yellow-600/60 opacity-80">
+                                        <i className="fas fa-book-journal-whills"></i>
+                                    </div>
+
+                                    <div className="absolute bottom-6 md:bottom-10 w-full text-center">
+                                        <p className="font-title text-[8px] md:text-[10px] text-yellow-600/60 tracking-[0.5em] uppercase">Limited Edition</p>
+                                    </div>
+                                    
+                                    <div className="absolute left-0 top-0 w-6 h-full bg-gradient-to-r from-white/10 to-transparent"></div>
+                                </div>
+
+                                {/* INSIDE COVER */}
+                                <div className="face back-face border-r border-stone-300 p-4 md:p-12 flex flex-col items-center justify-center">
+                                    <div className="absolute inset-0 paper-texture opacity-30"></div>
+                                    
+                                    <div className="border border-stone-200/60 p-4 md:p-8 h-full w-full flex flex-col items-center justify-center text-center relative bg-stone-50/10 shadow-inner rounded-sm">
+                                        <div className="mb-4 md:mb-8 opacity-20">
+                                            <i className="fas fa-scroll text-3xl md:text-4xl text-stone-800"></i>
+                                        </div>
+                                        
+                                        <p className="font-handwriting text-xl md:text-4xl text-stone-800 leading-snug">
+                                            "The world is a book, and those who do not travel another year only read a page."
+                                        </p>
+                                        
+                                        <div className="mt-4 md:mt-8 w-6 md:w-8 h-px bg-stone-300"></div>
+                                    </div>
+									<div className="mt-2 text-center text-stone-400 text-[8px] md:text-[10px] font-title tracking-widest uppercase"> Vol. MMXXVI</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    
+                    {isOpen && (
+                         <div className="absolute bottom-6 md:bottom-10 z-50 animate-fade-in flex flex-col items-center gap-4">
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
+                                className="px-8 md:px-10 py-2 md:py-3 bg-white/5 text-stone-400 font-title text-[8px] md:text-[10px] tracking-[0.3em] uppercase rounded-full hover:bg-white/10 hover:text-white transition-all border border-white/20 backdrop-blur-md"
+                            >
+                                Close Manuscript
+                            </button>
+                        </div>
+                    )}
+
+                    {isOpen && <Sparkles />}
+					
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<BookCard />);
+    </script>
+</body>
+</html>
