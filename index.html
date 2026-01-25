@@ -75,6 +75,13 @@
                 transform: translateX(50%) scale(0.56) !important; 
             }
         }
+		
+        @media (min-width: 768px) {
+             .book-open.book-wrapper {
+                /* Scale down on tablet to ensure it stays in viewport */
+                transform: translateX(50%) scale(0.8) !important; 
+            }
+        }
 
         .face {
             backface-visibility: hidden;
